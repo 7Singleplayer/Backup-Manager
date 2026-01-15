@@ -1,2 +1,2 @@
 # Backup-Manager
-A very minimalistic Backup-program .
+A minimalistic Backup-program .
