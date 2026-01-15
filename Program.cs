@@ -21,7 +21,7 @@ internal class Program
 
         //string os = Environment.OSVersion.Platform.ToString();
         var os = Environment.OSVersion.Platform;
-        consolelog($"Operating System: {os}", true);        //🐧🐡🐥🐤🐣🐦🐟👍👎👋📤📥🕫🕬🕭🕱🖏🗹🗵🗸😎😓😔😖🗿🗽😑🙃🙂🤝🤨🥲🨀🨁
+        consolelog($"Operating System: {os}", true);
         if (os == PlatformID.Unix)
         {
             Console.WriteLine("🐧😎");
