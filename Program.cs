@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
-using System.Security.Cryptography.X509Certificates;
 
 internal class Program
 {
@@ -14,6 +13,15 @@ internal class Program
         bool printstartup = true;
         int checkinginterval = 5; // in minutes
         bool clearlogfile = true;
+
+        string sampletext = "# <-- This is a comment\n" +
+        "first-start = true\n" +
+        "autostart = false\n" +
+        "print-startup = false\n" +
+        "checking-interval = 15\n" +
+        "compression-level = 0\n" +
+        "clear-logfile = true\n" +
+        "#backup = sourcepath, destinationpath,keepstructure,lastaccessdate, lastbackupdate, backupreasons, isfile, backupintervalH, backupintervalD, dozip, dounzip, ID, dodeletion";
 
         List<Backup> clone = new List<Backup>();
         Console.CursorVisible = false;
@@ -46,12 +54,13 @@ internal class Program
             configpath = Console.ReadLine() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(configpath))
             {
-                try{
-                configpath = Path.Combine(runpath, "FileManager.conf");
-                consolelog($"Generating new configuration file at: {configpath}", true);
-                File.WriteAllText(configpath, File.ReadAllText("sampleconfigs.txt"));
-                File.WriteAllText("path.conf", configpath);
-                break;
+                try
+                {
+                    configpath = Path.Combine(runpath, "FileManager.conf");
+                    consolelog($"Generating new configuration file at: {configpath}", true);
+                    File.WriteAllText(configpath, sampletext);
+                    File.WriteAllText("path.conf", configpath);
+                    break;
                 }
                 catch (Exception ex)
                 {
@@ -122,7 +131,7 @@ internal class Program
                         case "backup":
 
                             string[] paths = value.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                            if (paths.Length < 11)
+                            if (paths.Length < 12)
                             {
                                 consolelog($"     - Invalid backup configuration: '{value}', skipping...", true, ConsoleColor.Yellow);
                                 break;
@@ -236,7 +245,7 @@ internal class Program
                             while (loop)
                             {
 
-                                switch (menu(new string[] { $"source path: {sourcepath}", $"destination path: {destinationpath}", $"keep structure: {keepstructure}", $"backup reasons: {string.Join("|", backupreasons)}", $"backup interval hours: {backupintervalH}", $"backup interval days: {backupintervalD}", $"do zip: {dozip}", $"do unzip: {dounzip}",$"do deletion: {dodeletion}", "Confirm and Add Backup", "Cancel" }))
+                                switch (menu(new string[] { $"source path: {sourcepath}", $"destination path: {destinationpath}", $"keep structure: {keepstructure}", $"backup reasons: {string.Join("|", backupreasons)}", $"backup interval hours: {backupintervalH}", $"backup interval days: {backupintervalD}", $"do zip: {dozip}", $"do unzip: {dounzip}", $"do deletion: {dodeletion}", "Confirm and Add Backup", "Cancel" }))
                                 {
                                     case 0:
                                         // get source path
@@ -315,10 +324,10 @@ internal class Program
                             }
                             break;
                         case 1:
-                                if(clone.Count == 0)
-                                {
-                                    break;
-                                }
+                            if (clone.Count == 0)
+                            {
+                                break;
+                            }
                             consolelog("Removing a backup...", true);
                             Console.WriteLine("wich backup do you want to remove?");
                             var removeOptions = clone.Select((b, i) => $"{i + 1}. {b.sourcepath} -> {b.destpath}").ToList();
@@ -367,10 +376,10 @@ internal class Program
                             }
                             break;
                         case 2:
-                                if(clone.Count == 0)
-                                {
-                                    break;
-                                }
+                            if (clone.Count == 0)
+                            {
+                                break;
+                            }
                             consolelog("Editing backups...", true);
                             for (int i = 0; i < clone.Count; i++)
                             {
@@ -384,7 +393,7 @@ internal class Program
                             while (!validInput)
                             {
                                 string? input = Console.ReadLine();
-                                if(input == String.Empty)
+                                if (input == String.Empty)
                                 {
                                     editChoice = -1;
                                     break;
@@ -400,7 +409,7 @@ internal class Program
                                     consolelog("Invalid input. Please enter a valid number.", true, ConsoleColor.Red);
                                 }
                             }
-                            if(editChoice == -1)
+                            if (editChoice == -1)
                             {
                                 break;
                             }
@@ -422,7 +431,7 @@ internal class Program
                             bool loop2 = true;
                             while (loop2)
                             {
-                                switch (menu(new string[] { $"source path: {sourcepath2}", $"destination path: {destinationpath2}", $"keep structure: {keepstructure2}", $"backup reasons: {string.Join("|", backupreasons2)}", $"backup interval hours: {backupintervalH2}", $"backup interval days: {backupintervalD2}", $"do zip: {dozip2}", $"do unzip: {dounzip2}", $"ID: {ID2}",$"Delete deleted files: {dodeletion2}", "Confirm and Save Backup settings","cancel" }))
+                                switch (menu(new string[] { $"source path: {sourcepath2}", $"destination path: {destinationpath2}", $"keep structure: {keepstructure2}", $"backup reasons: {string.Join("|", backupreasons2)}", $"backup interval hours: {backupintervalH2}", $"backup interval days: {backupintervalD2}", $"do zip: {dozip2}", $"do unzip: {dounzip2}", $"ID: {ID2}", $"Delete deleted files: {dodeletion2}", "Confirm and Save Backup settings", "cancel" }))
                                 {
                                     case 0:
                                         // get source path
@@ -486,7 +495,7 @@ internal class Program
                                         break;
                                     case 9:
                                         dodeletion2 = !dodeletion2;
-                                        break;    
+                                        break;
                                     case 10:
                                         // confirm and save backup (replace the selected backup entry)
                                         clone.RemoveAt(editChoice);
@@ -525,9 +534,9 @@ internal class Program
 
                                         loop2 = false;
                                         break;
-                                        case 11:
+                                    case 11:
                                         loop2 = false;
-                                            break;
+                                        break;
 
                                 }
                             }
@@ -1008,11 +1017,11 @@ class Backup
         if (dodeletion)
         {
             string[] temp = Directory.GetFiles(destpath);
-            foreach(var file in temp)
+            foreach (var file in temp)
             {
                 if (!Directory.GetFiles(sourcepath).Contains(file))
                 {
-                    Directory.Delete(Path.Combine(destpath,file));
+                    Directory.Delete(Path.Combine(destpath, file));
                 }
             }
         }
@@ -1026,7 +1035,7 @@ class Backup
             try
             {
                 File.Copy(sourcepath, destpath, true);
-                
+
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -1043,7 +1052,7 @@ class Backup
         {
             DirectoryCopy(sourcepath, destpath, keepstructure);
         }
-       
+
         if (dounzip)
         {
             string source = sourcepath;
