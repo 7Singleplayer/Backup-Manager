@@ -130,7 +130,7 @@ internal class Program
                             break;
                         case "backup":
 
-                            string[] paths = value.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                            string[] paths = value.Split(',');
                             if (paths.Length < 12)
                             {
                                 consolelog($"     - Invalid backup configuration: '{value}', skipping...", true, ConsoleColor.Yellow);
@@ -311,7 +311,7 @@ internal class Program
                                             ID = clone.Count + 1,
                                             dodeletion = dodeletion
                                         });
-                                        File.AppendAllLines(configpath, new[] { $"backup={sourcepath},{destinationpath},{keepstructure},{lastaccessdate},{lastbackupdate},{string.Join("|", backupreasons)},{backupintervalH},{backupintervalD},{dozip},{dounzip},{id}" });
+                                        File.AppendAllLines(configpath, new[] { $"backup={sourcepath},{destinationpath},{keepstructure},{lastaccessdate},{lastbackupdate},{string.Join("|", backupreasons)},{backupintervalH},{backupintervalD},{dozip},{dounzip},{id},{dodeletion}" });
                                         consolelog($"Added new backup: {sourcepath} to {destinationpath}", true);
                                         loop = false;
                                         break;
@@ -598,45 +598,54 @@ internal class Program
                     List<FileSystemWatcher> watcherPool = new();
                     foreach (var item in clone)
                     {
-                        var watcher = new FileSystemWatcher
+                        try
                         {
-                            Path = item.sourcepath,
-                            Filter = "*",
-                            EnableRaisingEvents = true
-                        };
+                            var watcher = new FileSystemWatcher
+                            {
+                                Path = item.sourcepath,
+                                Filter = "*",
+                                EnableRaisingEvents = true
+                            };
 
-                        watcher.Changed += (s, e) =>
-                        {
-                            item.FileAccessed();
-                            consolelog($"File accessed: {e.FullPath}", true);
-                        };
+                            watcher.Changed += (s, e) =>
+                            {
+                                item.FileAccessed();
+                                consolelog($"File accessed: {e.FullPath}", true);
+                            };
 
-                        watcher.Created += (s, e) =>
-                        {
-                            item.FileAccessed();
-                            consolelog($"File created: {e.FullPath}", true);
-                        };
+                            watcher.Created += (s, e) =>
+                            {
+                                item.FileAccessed();
+                                consolelog($"File created: {e.FullPath}", true);
+                            };
 
-                        watcher.Deleted += (s, e) =>
-                        {
-                            item.FileAccessed();
-                            consolelog($"File deleted: {e.FullPath}", true);
-                        };
+                            watcher.Deleted += (s, e) =>
+                            {
+                                item.FileAccessed();
+                                consolelog($"File deleted: {e.FullPath}", true);
+                            };
 
-                        watcher.Renamed += (s, e) =>
-                        {
-                            item.FileAccessed();
-                            consolelog($"File renamed: {e.OldFullPath} to {e.FullPath}", true);
-                        };
+                            watcher.Renamed += (s, e) =>
+                            {
+                                item.FileAccessed();
+                                consolelog($"File renamed: {e.OldFullPath} to {e.FullPath}", true);
+                            };
 
-                        watcher.Error += (s, e) =>
+                            watcher.Error += (s, e) =>
+                            {
+                                consolelog($"File system watcher error: {e.GetException().Message}", true, ConsoleColor.Red);
+                                consolelog("Soft-Reset...", true);
+                                watcher.EnableRaisingEvents = false;
+                                watcher.EnableRaisingEvents = true;
+                            };
+                            watcherPool.Add(watcher); // Lifetime sichern
+                        }
+                        catch (Exception ex)
                         {
-                            consolelog($"File system watcher error: {e.GetException().Message}", true, ConsoleColor.Red);
-                            consolelog("Soft-Reset...", true);
-                            watcher.EnableRaisingEvents = false;
-                            watcher.EnableRaisingEvents = true;
-                        };
-                        watcherPool.Add(watcher); // Lifetime sichern
+                            Console.WriteLine("Error: " + ex.Message);
+                            File.AppendAllText("FileManager_log.log", $"{DateTime.Now}: Error: {ex.Message}\n");
+                        }
+
                     }
 
 
@@ -1007,6 +1016,7 @@ class Backup
             Console.WriteLine($"Source path '{sourcepath}' does not exist or is not a directory. Skipping...");
             Console.ResetColor();
             File.AppendAllText("FileManager_log.log", $"{DateTime.Now}: Source path '{sourcepath}' does not exist or is not a directory. Skipping...{Environment.NewLine}");
+
         }
     }
 
@@ -1016,13 +1026,29 @@ class Backup
 
         if (dodeletion)
         {
-            string[] temp = Directory.GetFiles(destpath);
-            foreach (var file in temp)
+            try
             {
-                if (!Directory.GetFiles(sourcepath).Contains(file))
+                string[] temp = Directory.GetFiles(destpath);
+                foreach (var file in temp)
                 {
-                    Directory.Delete(Path.Combine(destpath, file));
+                    if (!Directory.GetFiles(sourcepath).Contains(file))
+                    {
+                        try
+                        {
+                            File.Delete(Path.Combine(destpath, file));
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Error: " + ex.Message);
+                            File.AppendAllText("FileManager_log.log", $"{DateTime.Now}: Error: {ex.Message}\n");
+                        }
+                    }
                 }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Error: "+ ex.Message);
+                File.AppendAllText("FileManager_log.log", $"{DateTime.Now}: Error: {ex.Message}\n");
             }
         }
         if (dozip)
@@ -1046,6 +1072,11 @@ class Backup
                 File.AppendAllText("FileManager_log.log", $"{DateTime.Now}: Access denied copying '{sourcepath}' to '{destpath}': {ex.Message}{Environment.NewLine}");
 
 
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+                File.AppendAllText("FileManager_log.log", $"{DateTime.Now}: Error: {ex.Message}\n");
             }
         }
         else
