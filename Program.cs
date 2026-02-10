@@ -1039,7 +1039,9 @@ class Backup
                         }
                         catch (Exception ex)
                         {
+                            Console.ForegroundColor = ConsoleColor.Red;
                             Console.WriteLine("Error: " + ex.Message);
+                            Console.ResetColor();
                             File.AppendAllText("FileManager_log.log", $"{DateTime.Now}: Error: {ex.Message}\n");
                         }
                     }
@@ -1047,8 +1049,10 @@ class Backup
             }
             catch(Exception ex)
             {
-                Console.WriteLine("Error: "+ ex.Message);
-                File.AppendAllText("FileManager_log.log", $"{DateTime.Now}: Error: {ex.Message}\n");
+               Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Error: " + ex.Message);
+                            Console.ResetColor();
+                            File.AppendAllText("FileManager_log.log", $"{DateTime.Now}: Error: {ex.Message}\n");
             }
         }
         if (dozip)
