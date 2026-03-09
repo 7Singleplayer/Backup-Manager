@@ -1,7 +1,8 @@
 # Description
 
 This is a minimalist CLI tool that can be used to create backups.
-How to use it
+
+# How to use it
 
 When the program starts, you will be prompted to enter a path to a configuration file.
 You can leave this field empty—the program will automatically generate a new config file.
